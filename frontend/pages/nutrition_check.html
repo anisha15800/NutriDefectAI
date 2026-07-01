@@ -1,0 +1,1108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nutrition Check | NutriDefect AI</title>
+  <link rel="stylesheet" href="../css/style.css">
+  <style>
+    /* Specific styles for Nutrition Check page */
+    .nc-layout {
+      max-width: 1200px;
+      margin: 2rem auto;
+      padding: 0 5%;
+      display: grid;
+      grid-template-columns: 350px 1fr;
+      gap: 2rem;
+      align-items: start;
+    }
+
+    /* Left Panel: BMI Gauge */
+    .bmi-panel {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 2rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+
+    .bmi-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-weight: 700;
+      font-size: 1.25rem;
+      color: var(--text-primary);
+      margin-bottom: 2rem;
+    }
+
+    /* Simple CSS Gauge */
+    .gauge-container {
+      position: relative;
+      width: 200px;
+      height: 100px; /* Half circle */
+      margin: 0 auto 2rem;
+      overflow: hidden;
+    }
+
+    .gauge-background {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      border: 15px solid #e2e8f0;
+      border-bottom-color: transparent;
+      border-right-color: transparent;
+      transform: rotate(45deg);
+      box-sizing: border-box;
+    }
+
+    .gauge-progress {
+      position: absolute;
+      width: 200px;
+      height: 200px;
+      border-radius: 50%;
+      border: 15px solid var(--primary);
+      border-bottom-color: transparent;
+      border-right-color: transparent;
+      box-sizing: border-box;
+      transform: rotate(45deg); 
+      transition: transform 0.5s ease-out;
+    }
+
+    .gauge-needle {
+      position: absolute;
+      bottom: 0;
+      left: 50%;
+      width: 4px;
+      height: 80px;
+      background: #475569;
+      transform-origin: bottom center;
+      transform: rotate(-90deg);
+      transition: transform 0.5s ease-out;
+    }
+    
+    .gauge-needle::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: -4px;
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: #475569;
+    }
+
+    .gauge-value {
+      position: absolute;
+      bottom: 10px;
+      left: 0;
+      width: 100%;
+      text-align: center;
+    }
+
+    .gauge-value .number {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--text-primary);
+      line-height: 1;
+    }
+
+    .gauge-value .label {
+      font-size: 0.85rem;
+      color: var(--primary);
+      font-weight: 600;
+      margin-top: 0.25rem;
+    }
+
+    /* Sliders */
+    .slider-group {
+      margin-bottom: 1.5rem;
+    }
+
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-secondary);
+    }
+
+    .slider-header span.val {
+      color: var(--text-primary);
+      font-weight: 600;
+    }
+
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: transparent;
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      height: 16px;
+      width: 16px;
+      border-radius: 50%;
+      background: var(--secondary);
+      cursor: pointer;
+      margin-top: -6px;
+      box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+    }
+
+    input[type=range]::-webkit-slider-runnable-track {
+      width: 100%;
+      height: 4px;
+      cursor: pointer;
+      background: #e2e8f0;
+      border-radius: 2px;
+    }
+
+    .bmi-note {
+      display: flex;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-top: 2rem;
+      line-height: 1.5;
+    }
+    
+    .bmi-note .dot {
+      color: var(--secondary);
+    }
+
+    /* Right Panel: Wizard */
+    .wizard-panel {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 3rem;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.02);
+    }
+
+    .stepper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4rem;
+      position: relative;
+      padding: 0 1rem;
+    }
+
+    .stepper::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 1rem;
+      right: 1rem;
+      height: 2px;
+      background: #e2e8f0;
+      z-index: 1;
+    }
+
+    .step {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: #f8fafc;
+      border: 2px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      color: var(--text-secondary);
+      z-index: 2;
+      position: relative;
+    }
+
+    .step.active {
+      border-color: var(--primary);
+      color: var(--primary);
+      background: rgba(16, 185, 129, 0.1);
+    }
+
+    .step-content-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .step-content-header svg {
+      fill: var(--primary);
+    }
+
+    .step-desc {
+      color: var(--text-secondary);
+      margin-bottom: 2.5rem;
+      font-size: 0.95rem;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+      margin-bottom: 1.5rem;
+    }
+    
+    .form-group-full {
+      margin-bottom: 1.5rem;
+    }
+
+    .input-group label, .form-group-full label {
+      display: block;
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.5rem;
+    }
+
+    .input-group input, .input-group select, .form-group-full select, .form-group-full input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      border: 1px solid var(--surface-border);
+      background: transparent;
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.3s;
+    }
+
+    .input-group input:focus, .input-group select:focus, .form-group-full select:focus, .form-group-full input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+    }
+
+    .autocomplete {
+      position: relative;
+      display: flex;
+      flex-grow: 1;
+    }
+
+    .autocomplete-items {
+      position: absolute;
+      border: 1px solid #e2e8f0;
+      border-bottom: none;
+      border-top: none;
+      z-index: 99;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: var(--surface);
+      border-radius: 0 0 8px 8px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .autocomplete-items div {
+      padding: 10px 15px;
+      cursor: pointer;
+      border-bottom: 1px solid #e2e8f0;
+      font-size: 0.95rem;
+      color: var(--text-primary);
+    }
+
+    .autocomplete-items div:hover {
+      background-color: rgba(16, 185, 129, 0.05);
+    }
+
+    .autocomplete-active {
+      background-color: rgba(16, 185, 129, 0.1) !important;
+      color: var(--primary);
+    }
+
+    .wizard-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    /* Tag pills */
+    .tags-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+    
+    .tag {
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--primary);
+      padding: 0.25rem 0.75rem;
+      border-radius: 9999px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      cursor: pointer;
+    }
+
+    .tag.suggested {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--secondary);
+    }
+    
+    .tag:hover {
+      background: var(--primary);
+      color: white;
+    }
+
+    .tag.suggested:hover {
+      background: var(--secondary);
+      color: white;
+    }
+
+    /* Results */
+    .result-card {
+      background: rgba(0,0,0,0.02);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+    .result-card h4 {
+      margin-bottom: 0.5rem;
+      color: var(--primary);
+    }
+
+    @media (max-width: 900px) {
+      .nc-layout {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  
+  <div id="navbar-placeholder"></div>
+
+  <main>
+    <div class="nc-layout">
+      <!-- Left Panel: BMI Gauge -->
+      <div class="bmi-panel">
+        <div class="bmi-header">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+            <line x1="12" y1="18" x2="12.01" y2="18"></line>
+            <path d="M8 6h8"></path>
+            <path d="M8 10h8"></path>
+            <path d="M8 14h8"></path>
+          </svg>
+          BMI Gauge Meter
+        </div>
+        
+        <div class="gauge-container">
+          <div class="gauge-background"></div>
+          <div class="gauge-progress" id="gauge-progress"></div>
+          <div class="gauge-needle" id="gauge-needle"></div>
+          <div class="gauge-value">
+            <div class="number" id="bmi-value">24.2</div>
+            <div class="label" id="bmi-label">Normal</div>
+          </div>
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>Height</span>
+            <span class="val"><span id="height-val">170</span> cm</span>
+          </div>
+          <input type="range" id="height-slider" min="100" max="250" value="170">
+        </div>
+
+        <div class="slider-group">
+          <div class="slider-header">
+            <span>Weight</span>
+            <span class="val"><span id="weight-val">70</span> kg</span>
+          </div>
+          <input type="range" id="weight-slider" min="30" max="200" value="70">
+        </div>
+
+        <div class="bmi-note">
+          <span class="dot">●</span>
+          Maintain healthy exercise and balanced nutritional intake
+        </div>
+      </div>
+
+      <!-- Right Panel: Wizard -->
+      <div class="wizard-panel">
+        <div class="stepper">
+          <div class="step active" id="indicator-1">1</div>
+          <div class="step" id="indicator-2">2</div>
+          <div class="step" id="indicator-2-5">3</div>
+          <div class="step" id="indicator-3">4</div>
+        </div>
+
+        <div class="step-content">
+          <!-- STEP 1 -->
+          <div id="step1">
+            <div class="step-content-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
+              </svg>
+              Step 1: Personal Details
+            </div>
+            <p class="step-desc">Please input basic demographics to build your metabolic profile baseline</p>
+
+            <div class="form-grid">
+              <div class="input-group">
+                <label>Your Age</label>
+                <input type="number" id="age-input" value="28" min="1">
+              </div>
+              <div class="input-group">
+                <label>Gender</label>
+                <select id="gender-input">
+                  <option value="Male" selected>Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="form-grid">
+              <div class="input-group">
+                <label>Diet Preference</label>
+                <select id="diet-pref-input">
+                  <option value="Vegetarian">Vegetarian</option>
+                  <option value="Non-Vegetarian" selected>Non-Vegetarian</option>
+                  <option value="Vegan">Vegan</option>
+                  <option value="Pescatarian">Pescatarian</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label>Daily Lifestyle</label>
+                <select id="lifestyle-input">
+                  <option value="Sedentary">Sedentary (Little to no exercise)</option>
+                  <option value="Lightly Active">Lightly Active (Light exercise 1-3 days/week)</option>
+                  <option value="Moderately Active" selected>Moderately Active (Moderate exercise 3-5 days/week)</option>
+                  <option value="Very Active">Very Active (Hard exercise 6-7 days/week)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="wizard-actions">
+              <button class="btn btn-primary" onclick="goToStep(2)" style="display:flex; align-items:center; gap:0.5rem;">
+                Next Step 
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                  <polyline points="12 5 19 12 12 19"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 2 -->
+          <div id="step2" style="display: none;">
+            <div class="step-content-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+              </svg>
+              Step 2: Medical History & Symptoms
+            </div>
+            <p class="step-desc">Help our AI understand your current health status to predict potential deficiencies.</p>
+
+            <div class="form-group-full">
+              <label>Medical History</label>
+              <select id="history-input">
+                <option value="None" selected>None</option>
+                <option value="Anemia">Anemia</option>
+                <option value="Diabetes">Diabetes</option>
+                <option value="Hypertension">Hypertension</option>
+                <option value="Thyroid Disorder">Thyroid Disorder</option>
+              </select>
+            </div>
+
+            <div class="form-group-full">
+              <label>Current Symptoms (Type and press Enter)</label>
+              <div style="display:flex; gap:0.5rem;">
+                <div class="autocomplete">
+                  <input type="text" id="symptom-input" placeholder="e.g. Fatigue, Hair loss, Muscle cramps...">
+                </div>
+                <button class="btn btn-outline" onclick="addSymptomFromInput()">Add</button>
+              </div>
+              
+              <div class="tags-container" id="symptoms-list">
+                <!-- Added symptoms will appear here -->
+              </div>
+            </div>
+
+            <div class="form-group-full">
+              <button class="btn btn-outline" onclick="predictSimilarSymptoms()" style="width:100%;" id="predict-btn">
+                Predict Similar Symptoms using ML
+              </button>
+              <div class="tags-container" id="suggested-symptoms-list" style="margin-top: 1rem;">
+                <!-- Suggested symptoms appear here -->
+              </div>
+            </div>
+
+            <div class="wizard-actions">
+              <button class="btn btn-outline" onclick="goToStep(1)">Back</button>
+              <button class="btn btn-primary" onclick="getFollowupQuestions()" id="followup-btn" style="display:flex; align-items:center; gap:0.5rem;">
+                Next: AI Consultation
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 2.5 -->
+          <div id="step2-5" style="display: none;">
+            <div class="step-content-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              Interactive AI Consultation
+            </div>
+            <p class="step-desc">Please answer these follow-up questions to help our AI provide an accurate diagnosis.</p>
+
+            <div id="dynamic-questions-container" style="margin-bottom: 2rem;">
+              <!-- Dynamic questions will be injected here -->
+            </div>
+
+            <div class="wizard-actions">
+              <button class="btn btn-outline" onclick="goToStep(2)">Back</button>
+              <button class="btn btn-primary" onclick="submitAssessment()" id="final-submit-btn" style="display:flex; align-items:center; gap:0.5rem;">
+                Analyze Profile
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- STEP 3 -->
+          <div id="step3" style="display: none;">
+            <div class="step-content-header">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+              Step 3: AI Analysis Results
+            </div>
+            <p class="step-desc">Your profile has been saved. Based on our ML algorithms, here is your personalized assessment.</p>
+
+            <div class="result-card">
+              <h4>Predicted Deficiency Risk</h4>
+              <p id="res-deficiency" style="font-weight: 600; font-size: 1.25rem;">Loading...</p>
+            </div>
+
+            <div class="result-card">
+              <h4>Diet Recommendations</h4>
+              <ul id="res-diet" style="padding-left: 1.5rem; line-height: 1.8;">
+                <li>Loading...</li>
+              </ul>
+            </div>
+
+            <div class="result-card">
+              <h4>Recommended Tests & Doctors</h4>
+              <p><strong>Tests:</strong> <span id="res-tests">Loading...</span></p>
+              <p><strong>Specialists:</strong> <span id="res-doctors">Loading...</span></p>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+              <button class="btn btn-secondary" style="width: 100%; background: var(--accent); color: white;" id="btn-generate-diet" onclick="generateFullDietPlan()">
+                Generate 7-Day AI Diet Plan
+              </button>
+            </div>
+
+            <div class="result-card" id="full-diet-plan-container" style="display: none;">
+              <h4>7-Day Personalized Diet Plan</h4>
+              <div id="full-diet-plan-content" style="margin-top: 1rem; line-height: 1.6;"></div>
+            </div>
+
+            <div class="wizard-actions">
+              <a href="index.html" class="btn btn-outline">Return to Home</a>
+              <a href="dashboard.html" class="btn btn-primary" onclick="window.location.href='index.html'; return false;">Go to Dashboard</a>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script src="../js/main.js?v=2"></script>
+  <script>
+    const API_BASE = 'http://localhost:5000/api';
+    let currentSymptoms = [];
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // BMI Logic
+      const heightSlider = document.getElementById('height-slider');
+      const weightSlider = document.getElementById('weight-slider');
+      const heightVal = document.getElementById('height-val');
+      const weightVal = document.getElementById('weight-val');
+      const bmiValue = document.getElementById('bmi-value');
+      const bmiLabel = document.getElementById('bmi-label');
+      const gaugeProgress = document.getElementById('gauge-progress');
+      const gaugeNeedle = document.getElementById('gauge-needle');
+
+      function calculateBMI() {
+        const h = parseInt(heightSlider.value) / 100;
+        const w = parseInt(weightSlider.value);
+        const bmi = (w / (h * h)).toFixed(1);
+        
+        bmiValue.textContent = bmi;
+
+        let label = "Normal";
+        let color = "var(--primary)";
+        
+        if (bmi < 18.5) {
+          label = "Underweight";
+          color = "#3b82f6";
+        } else if (bmi >= 18.5 && bmi < 25) {
+          label = "Normal";
+          color = "var(--primary)";
+        } else if (bmi >= 25 && bmi < 30) {
+          label = "Overweight";
+          color = "#f59e0b";
+        } else {
+          label = "Obese";
+          color = "#ef4444";
+        }
+
+        bmiLabel.textContent = label;
+        bmiLabel.style.color = color;
+        gaugeProgress.style.borderColor = color;
+        gaugeProgress.style.borderBottomColor = 'transparent';
+        gaugeProgress.style.borderRightColor = 'transparent';
+
+        let percent = (bmi - 10) / 30;
+        if (percent < 0) percent = 0;
+        if (percent > 1) percent = 1;
+
+        const progressAngle = 45 + (percent * 180);
+        const needleAngle = -90 + (percent * 180);
+
+        gaugeProgress.style.transform = `rotate(${progressAngle}deg)`;
+        gaugeNeedle.style.transform = `rotate(${needleAngle}deg)`;
+      }
+
+      heightSlider.addEventListener('input', (e) => {
+        heightVal.textContent = e.target.value;
+        calculateBMI();
+      });
+
+      weightSlider.addEventListener('input', (e) => {
+        weightVal.textContent = e.target.value;
+        calculateBMI();
+      });
+
+      calculateBMI();
+
+      // Symptom input enter key
+      document.getElementById('symptom-input').addEventListener('keypress', function (e) {
+          if (e.key === 'Enter') {
+              addSymptomFromInput();
+              closeAllLists();
+          }
+      });
+
+      // Autocomplete logic
+      const commonSymptomsList = [
+        "Abdominal pain", "Acne", "Anxiety", "Back pain", "Bloating", "Blood in stool", "Blurry vision", 
+        "Bone pain", "Brain fog", "Breast tenderness", "Brittle nails", "Bruising easily", "Chest pain", 
+        "Chills", "Cold hands and feet", "Constipation", "Cough", "Cramping", "Decreased appetite", 
+        "Depression", "Diarrhea", "Difficulty swallowing", "Dizziness", "Dry eyes", "Dry mouth", "Dry skin", 
+        "Earache", "Excessive sweating", "Fatigue", "Fever", "Flushed skin", "Frequent illness", 
+        "Frequent urination", "Gas", "Hair loss", "Headache", "Heart palpitations", "Heartburn", 
+        "High blood pressure", "Hives", "Hoarseness", "Hot flashes", "Increased appetite", "Increased thirst", 
+        "Indigestion", "Insomnia", "Irregular heartbeat", "Irritability", "Itchy eyes", "Itchy skin", 
+        "Joint pain", "Joint stiffness", "Lack of concentration", "Leg cramps", "Loss of smell", 
+        "Loss of taste", "Low mood", "Memory loss", "Mood swings", "Muscle aches", "Muscle cramps", 
+        "Muscle weakness", "Nausea", "Night sweats", "Numbness", "Pale skin", "Palpitations", 
+        "Panic attacks", "Peeling skin", "Poor sleep", "Racing heart", "Rash", "Ringing ears", 
+        "Runny nose", "Shortness of breath", "Skin lesions", "Sneezing", "Sore throat", "Stiff neck", 
+        "Stomach ache", "Swollen ankles", "Swollen glands", "Swollen joints", "Tingling", "Tremors", 
+        "Unexplained weight loss", "Unexplained weight gain", "Vertigo", "Vomiting", "Weakness", 
+        "Weight gain", "Weight loss", "Wheezing"
+      ];
+
+      const inp = document.getElementById("symptom-input");
+      let currentFocus;
+      
+      inp.addEventListener("input", function(e) {
+          let a, b, i, val = this.value;
+          closeAllLists();
+          if (!val) { return false;}
+          currentFocus = -1;
+          a = document.createElement("DIV");
+          a.setAttribute("id", this.id + "autocomplete-list");
+          a.setAttribute("class", "autocomplete-items");
+          this.parentNode.appendChild(a);
+          
+          let count = 0;
+          for (i = 0; i < commonSymptomsList.length; i++) {
+            if (commonSymptomsList[i].substr(0, val.length).toUpperCase() == val.toUpperCase()) {
+              b = document.createElement("DIV");
+              b.innerHTML = "<strong>" + commonSymptomsList[i].substr(0, val.length) + "</strong>";
+              b.innerHTML += commonSymptomsList[i].substr(val.length);
+              b.innerHTML += "<input type='hidden' value='" + commonSymptomsList[i] + "'>";
+              b.addEventListener("click", function(e) {
+                  inp.value = this.getElementsByTagName("input")[0].value;
+                  addSymptomFromInput();
+                  closeAllLists();
+              });
+              a.appendChild(b);
+              count++;
+              if(count >= 8) break; // Limit suggestions
+            }
+          }
+      });
+
+      function closeAllLists(elmnt) {
+        var x = document.getElementsByClassName("autocomplete-items");
+        for (var i = 0; i < x.length; i++) {
+          if (elmnt != x[i] && elmnt != inp) {
+            x[i].parentNode.removeChild(x[i]);
+          }
+        }
+      }
+      document.addEventListener("click", function (e) {
+          closeAllLists(e.target);
+      });
+    });
+
+    // Navigation
+    function goToStep(stepNumber) {
+      document.getElementById('step1').style.display = 'none';
+      document.getElementById('step2').style.display = 'none';
+      document.getElementById('step2-5').style.display = 'none';
+      document.getElementById('step3').style.display = 'none';
+      
+      let stepId = `step${stepNumber}`;
+      if (stepNumber === 2.5) stepId = 'step2-5';
+      
+      document.getElementById(stepId).style.display = 'block';
+
+      document.getElementById('indicator-1').classList.remove('active');
+      document.getElementById('indicator-2').classList.remove('active');
+      document.getElementById('indicator-2-5').classList.remove('active');
+      document.getElementById('indicator-3').classList.remove('active');
+
+      if (stepNumber >= 1) document.getElementById('indicator-1').classList.add('active');
+      if (stepNumber >= 2) document.getElementById('indicator-2').classList.add('active');
+      if (stepNumber >= 2.5) document.getElementById('indicator-2-5').classList.add('active');
+      if (stepNumber >= 3) document.getElementById('indicator-3').classList.add('active');
+    }
+
+    // Step 2 Logic
+    function addSymptomFromInput() {
+      const input = document.getElementById('symptom-input');
+      const val = input.value.trim();
+      if(val && !currentSymptoms.includes(val)) {
+        addSymptom(val);
+      }
+      input.value = '';
+    }
+
+    function addSymptom(symptom) {
+      if(!currentSymptoms.includes(symptom)) {
+        currentSymptoms.push(symptom);
+        renderSymptoms();
+      }
+    }
+
+    function removeSymptom(symptom) {
+      currentSymptoms = currentSymptoms.filter(s => s !== symptom);
+      renderSymptoms();
+    }
+
+    function renderSymptoms() {
+      const list = document.getElementById('symptoms-list');
+      list.innerHTML = '';
+      currentSymptoms.forEach(s => {
+        const el = document.createElement('div');
+        el.className = 'tag';
+        el.innerHTML = `${s} <span onclick="removeSymptom('${s}')">×</span>`;
+        list.appendChild(el);
+      });
+    }
+
+    async function predictSimilarSymptoms() {
+      if (currentSymptoms.length === 0) {
+        alert("Please add at least one symptom first.");
+        return;
+      }
+
+      const btn = document.getElementById('predict-btn');
+      btn.innerText = 'Predicting...';
+      
+      try {
+        const res = await fetch(`${API_BASE}/assessment/suggest_symptoms`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ symptoms: currentSymptoms })
+        });
+        const data = await res.json();
+        
+        const sugList = document.getElementById('suggested-symptoms-list');
+        sugList.innerHTML = '';
+        
+        if (data.suggestions) {
+          data.suggestions.forEach(s => {
+            const el = document.createElement('div');
+            el.className = 'tag suggested';
+            el.innerHTML = `+ ${s}`;
+            el.onclick = () => {
+              addSymptom(s);
+              el.remove();
+            };
+            sugList.appendChild(el);
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+      
+      btn.innerText = 'Predict Similar Symptoms using ML';
+    }
+
+    let currentFollowupQuestions = [];
+
+    async function getFollowupQuestions() {
+      if(currentSymptoms.length === 0) {
+        alert("Please add at least one symptom first.");
+        return;
+      }
+
+      const btn = document.getElementById('followup-btn');
+      const ogText = btn.innerHTML;
+      btn.innerHTML = 'AI is analyzing...';
+      btn.disabled = true;
+
+      const payload = {
+        age: document.getElementById('age-input').value,
+        gender: document.getElementById('gender-input').value,
+        medical_history: document.getElementById('history-input').value,
+        symptoms: currentSymptoms
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/assessment/followup`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        
+        if (data.questions) {
+          currentFollowupQuestions = data.questions;
+          renderFollowupQuestions(data.questions);
+          goToStep(2.5);
+        } else {
+          alert("Failed to generate follow-up questions.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Server error during AI consultation.");
+      }
+
+      btn.innerHTML = ogText;
+      btn.disabled = false;
+    }
+
+    function renderFollowupQuestions(questions) {
+      const container = document.getElementById('dynamic-questions-container');
+      container.innerHTML = '';
+
+      questions.forEach((q, index) => {
+        const qDiv = document.createElement('div');
+        qDiv.className = 'form-group-full result-card';
+        qDiv.style.marginBottom = '1.5rem';
+
+        const label = document.createElement('label');
+        label.innerText = `${index + 1}. ${q.question}`;
+        label.style.display = 'block';
+        label.style.marginBottom = '1rem';
+        label.style.fontSize = '1.05rem';
+        label.style.color = 'var(--primary)';
+        qDiv.appendChild(label);
+
+        const optionsDiv = document.createElement('div');
+        optionsDiv.style.display = 'flex';
+        optionsDiv.style.flexDirection = 'column';
+        optionsDiv.style.gap = '0.75rem';
+
+        q.options.forEach((opt, oIndex) => {
+          const optLabel = document.createElement('label');
+          optLabel.style.display = 'flex';
+          optLabel.style.alignItems = 'center';
+          optLabel.style.justifyContent = 'space-between';
+          optLabel.style.cursor = 'pointer';
+          optLabel.style.fontWeight = 'normal';
+          optLabel.style.padding = '0.75rem 1rem';
+          optLabel.style.background = 'var(--surface)';
+          optLabel.style.border = '1px solid var(--surface-border)';
+          optLabel.style.borderRadius = '8px';
+          optLabel.style.transition = 'all 0.2s';
+          optLabel.style.width = '100%';
+          optLabel.style.boxSizing = 'border-box';
+
+          const radio = document.createElement('input');
+          radio.type = 'radio';
+          radio.name = `question-${index}`;
+          radio.value = opt;
+          radio.style.width = 'auto';      // Override the global input { width: 100% }
+          radio.style.margin = '0';
+          if (oIndex === 0) radio.checked = true; // default select first
+
+          const span = document.createElement('span');
+          span.innerText = opt;
+
+          optLabel.appendChild(span);
+          optLabel.appendChild(radio);
+          optionsDiv.appendChild(optLabel);
+        });
+
+        qDiv.appendChild(optionsDiv);
+        container.appendChild(qDiv);
+      });
+    }
+
+    async function submitAssessment() {
+      // Collect answers
+      const followup_answers = [];
+      currentFollowupQuestions.forEach((q, index) => {
+        const selected = document.querySelector(`input[name="question-${index}"]:checked`);
+        if (selected) {
+          followup_answers.push({
+            question: q.question,
+            answer: selected.value
+          });
+        }
+      });
+      const age = document.getElementById('age-input').value;
+      const gender = document.getElementById('gender-input').value;
+      const dietPref = document.getElementById('diet-pref-input').value;
+      const lifestyle = document.getElementById('lifestyle-input').value;
+      const height = document.getElementById('height-slider').value;
+      const weight = document.getElementById('weight-slider').value;
+      const h = parseInt(height) / 100;
+      const bmi = (parseInt(weight) / (h * h)).toFixed(1);
+      
+      const history = document.getElementById('history-input').value;
+
+      if(currentSymptoms.length === 0) {
+        alert("Please add symptoms for a better prediction.");
+        return;
+      }
+
+      const btn = document.getElementById('final-submit-btn');
+      const ogText = btn.innerHTML;
+      btn.innerHTML = 'Processing...';
+
+      let userEmail = null;
+      try {
+        const user = JSON.parse(localStorage.getItem('user'));
+        if (user) userEmail = user.email;
+      } catch(e){}
+
+      const payload = {
+        email: userEmail,
+        age: age,
+        gender: gender,
+        diet_preference: dietPref,
+        lifestyle: lifestyle,
+        bmi: bmi,
+        medical_history: history,
+        symptoms: currentSymptoms,
+        followup_answers: followup_answers
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/assessment/final`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        
+        if (data.result) {
+          displayResults(data.result);
+          goToStep(3);
+          // Automatically trigger the 7-day diet plan generation
+          generateFullDietPlan();
+        } else {
+          alert("Could not process the assessment.");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("An error occurred connecting to the server.");
+      }
+      
+      btn.innerHTML = ogText;
+    }
+
+    function displayResults(res) {
+      document.getElementById('res-deficiency').innerText = res.deficiency;
+      
+      const dietList = document.getElementById('res-diet');
+      dietList.innerHTML = '';
+      res.diet_recommendations.forEach(d => {
+        const li = document.createElement('li');
+        li.innerText = d;
+        dietList.appendChild(li);
+      });
+
+      document.getElementById('res-tests').innerText = res.recommended_tests.join(", ");
+      document.getElementById('res-doctors').innerText = res.recommended_doctors.join(", ");
+    }
+
+    async function generateFullDietPlan() {
+      const deficiency = document.getElementById('res-deficiency').innerText;
+      if (!deficiency || deficiency === "Loading...") return;
+
+      const btn = document.getElementById('btn-generate-diet');
+      const ogText = btn.innerHTML;
+      btn.innerHTML = 'Generating using AI... Please wait';
+      btn.disabled = true;
+
+      const age = document.getElementById('age-input').value;
+      const gender = document.getElementById('gender-input').value;
+      const dietPref = document.getElementById('diet-pref-input').value;
+      const lifestyle = document.getElementById('lifestyle-input').value;
+      const height = document.getElementById('height-slider').value;
+      const weight = document.getElementById('weight-slider').value;
+      const h = parseInt(height) / 100;
+      const bmi = (parseInt(weight) / (h * h)).toFixed(1);
+
+      try {
+        const res = await fetch(`${API_BASE}/assessment/generate_diet_plan`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            deficiency: deficiency,
+            user_data: { age, gender, diet_preference: dietPref, lifestyle: lifestyle, bmi }
+          })
+        });
+        const data = await res.json();
+        
+        if (data.html) {
+          document.getElementById('full-diet-plan-container').style.display = 'block';
+          document.getElementById('full-diet-plan-content').innerHTML = data.html;
+          btn.style.display = 'none'; // Hide button after generating
+        } else {
+          alert("Failed to generate diet plan.");
+        }
+      } catch(err) {
+        console.error(err);
+        alert("Server error during diet generation.");
+      }
+      
+      btn.innerHTML = ogText;
+      btn.disabled = false;
+    }
+  </script>
+</body>
+</html>

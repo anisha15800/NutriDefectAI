@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NutriVision - Face Recognition AI</title>
+  <link rel="stylesheet" href="../css/style.css?v=2">
+  <style>
+    .service-hero {
+      text-align: center;
+      padding: 4rem 5% 2rem 5%;
+    }
+    .service-hero h1 { font-size: 3rem; font-weight: 800; color: var(--text-primary); margin-bottom: 1rem; }
+    .service-hero h1 span {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .service-hero p { font-size: 1.2rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto 2rem auto; line-height: 1.6; }
+    
+    .service-container {
+      max-width: 900px;
+      margin: 0 auto 4rem auto;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 3rem;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+
+    /* Camera UI */
+    .camera-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      margin: 0 auto;
+      border-radius: 16px;
+      overflow: hidden;
+      background: #000;
+      aspect-ratio: 4/3;
+      display: none;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transform: scaleX(-1); /* Mirror effect */
+    }
+
+    .overlay-frame {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 60%;
+      height: 70%;
+      border: 2px dashed rgba(255, 255, 255, 0.5);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    .camera-controls {
+      margin-top: 2rem;
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+    }
+
+    .btn-camera {
+      background: #0ea5e9;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+    }
+
+    .btn-camera:hover {
+      background: #0284c7;
+    }
+
+    .btn-capture {
+      background: #f43f5e;
+      color: white;
+      border: none;
+      padding: 1rem 2rem;
+      border-radius: 8px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s;
+      display: none; /* hidden initially */
+    }
+
+    .btn-capture:hover {
+      background: #e11d48;
+    }
+
+    #captured-preview {
+      width: 100%;
+      max-width: 400px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 2rem;
+      display: none;
+      transform: scaleX(-1); /* Match camera mirror */
+    }
+
+    /* Results Dashboard */
+    #result-container {
+      display: none;
+      max-width: 900px;
+      margin: 0 auto 4rem auto;
+    }
+
+    .symptoms-box {
+      background: rgba(244, 63, 94, 0.05);
+      border-left: 4px solid #f43f5e;
+      padding: 1.5rem;
+      border-radius: 0 8px 8px 0;
+      margin-bottom: 2rem;
+      text-align: left;
+    }
+
+    .symptoms-box h3 {
+      color: #f43f5e;
+      margin-top: 0;
+      margin-bottom: 1rem;
+    }
+
+    .deficiencies-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2rem;
+    }
+
+    .deficiency-card {
+      background: var(--background);
+      border: 1px solid var(--surface-border);
+      border-radius: 12px;
+      padding: 1.5rem;
+      text-align: left;
+    }
+
+    .deficiency-card h4 {
+      margin: 0 0 0.5rem 0;
+      color: var(--primary);
+    }
+
+    .deficiency-card p {
+      margin: 0;
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+    }
+
+    .summary-text {
+      text-align: left;
+      line-height: 1.8;
+      color: var(--text-primary);
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      padding: 1.5rem;
+      border-radius: 12px;
+    }
+
+    .loader {
+      display: none;
+      margin: 2rem auto;
+      border: 4px solid var(--surface-border);
+      border-top: 4px solid #0ea5e9;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div id="navbar-placeholder"></div>
+
+  <main>
+    <section class="service-hero">
+      <h1>Face <span>Recognition AI</span></h1>
+      <p>Our AI acts as a clinical diagnostician, visually scanning your skin, eyes, and hair for physical signs of nutritional deficiencies.</p>
+    </section>
+
+    <div class="service-container" id="main-card">
+      <div class="camera-wrapper" id="camera-wrapper">
+        <video id="video" autoplay playsinline></video>
+        <div class="overlay-frame"></div>
+      </div>
+      
+      <canvas id="canvas" style="display:none;"></canvas>
+      <img id="captured-preview" src="" alt="Captured Image">
+
+      <div class="loader" id="loader"></div>
+      <p id="status-message" style="color: var(--text-secondary); margin-top: 1rem; display: none;">Analyzing face for symptoms...</p>
+
+      <div class="camera-controls">
+        <button class="btn-camera" id="btn-start" onclick="startCamera()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+          Open Camera
+        </button>
+        <button class="btn-capture" id="btn-capture" onclick="captureAndAnalyze()">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12h4l3-9 5 18 3-9h5"></path></svg>
+          Capture & Analyze
+        </button>
+        <button class="btn btn-outline" id="btn-retake" onclick="resetCamera()" style="display: none;">Retake</button>
+      </div>
+    </div>
+
+    <!-- Results Dashboard -->
+    <div id="result-container" class="service-container" style="text-align: left;">
+      <h2 style="margin-top: 0; color: var(--text-primary); border-bottom: 1px solid var(--surface-border); padding-bottom: 1rem;">Clinical Diagnostic Findings</h2>
+
+      <div class="symptoms-box">
+        <h3>Detected Physical Symptoms</h3>
+        <ul id="res-symptoms" style="margin: 0; padding-left: 1.5rem; line-height: 1.6; color: var(--text-primary);">
+        </ul>
+      </div>
+
+      <h3 style="margin-bottom: 1rem; color: var(--text-primary);">Potential Nutritional Deficiencies</h3>
+      <div class="deficiencies-grid" id="res-deficiencies">
+        <!-- Populated dynamically -->
+      </div>
+
+      <h3 style="margin-bottom: 1rem; color: var(--text-primary);">AI Clinical Summary</h3>
+      <div class="summary-text" id="res-summary">
+      </div>
+
+      <button class="btn btn-primary" style="width: 100%; margin-top: 2rem;" onclick="resetToStart()">Scan Another Patient</button>
+    </div>
+  </main>
+
+  <script src="../js/main.js?v=2"></script>
+  <script>
+    const API_BASE = 'http://127.0.0.1:5000/api';
+    const video = document.getElementById('video');
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let stream = null;
+    let base64Image = null;
+
+    async function startCamera() {
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        video.srcObject = stream;
+        
+        document.getElementById('camera-wrapper').style.display = 'block';
+        document.getElementById('btn-start').style.display = 'none';
+        document.getElementById('btn-capture').style.display = 'flex';
+      } catch (err) {
+        console.error("Camera error:", err);
+        alert("Unable to access camera. Please ensure you have granted browser permissions and are using a secure connection (localhost or HTTPS).");
+      }
+    }
+
+    function stopCamera() {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+      }
+    }
+
+    async function captureAndAnalyze() {
+      // Draw video to canvas
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // Get base64 jpeg
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+      base64Image = dataUrl.split(',')[1];
+      
+      // Stop camera and show preview
+      stopCamera();
+      document.getElementById('camera-wrapper').style.display = 'none';
+      document.getElementById('btn-capture').style.display = 'none';
+      
+      const preview = document.getElementById('captured-preview');
+      preview.src = dataUrl;
+      preview.style.display = 'inline-block';
+      
+      // Show loader
+      document.getElementById('loader').style.display = 'block';
+      document.getElementById('status-message').style.display = 'block';
+      document.getElementById('btn-retake').style.display = 'none';
+
+      try {
+        const res = await fetch(`${API_BASE}/ai/analyze_face`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: base64Image })
+        });
+
+        const data = await res.json();
+        
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('status-message').style.display = 'none';
+        document.getElementById('btn-retake').style.display = 'inline-block';
+
+        if (data.error) {
+          alert("Error: " + data.error);
+          return;
+        }
+
+        renderResults(data);
+
+      } catch (err) {
+        console.error(err);
+        alert("Failed to connect to the server.");
+        document.getElementById('loader').style.display = 'none';
+        document.getElementById('status-message').style.display = 'none';
+        document.getElementById('btn-retake').style.display = 'inline-block';
+      }
+    }
+
+    function renderResults(data) {
+      document.getElementById('main-card').style.display = 'none';
+      document.getElementById('result-container').style.display = 'block';
+
+      // Symptoms
+      const symList = document.getElementById('res-symptoms');
+      symList.innerHTML = '';
+      if (data.detected_symptoms && data.detected_symptoms.length > 0) {
+        data.detected_symptoms.forEach(s => {
+          const li = document.createElement('li');
+          li.innerText = s;
+          symList.appendChild(li);
+        });
+      } else {
+        symList.innerHTML = '<li>No significant physical symptoms detected.</li>';
+      }
+
+      // Deficiencies
+      const defGrid = document.getElementById('res-deficiencies');
+      defGrid.innerHTML = '';
+      if (data.potential_deficiencies && data.potential_deficiencies.length > 0) {
+        data.potential_deficiencies.forEach(d => {
+          const card = document.createElement('div');
+          card.className = 'deficiency-card';
+          card.innerHTML = `<h4>${d.name}</h4><p>${d.reason}</p>`;
+          defGrid.appendChild(card);
+        });
+      } else {
+        defGrid.innerHTML = '<div class="deficiency-card"><p>No clear deficiencies identified.</p></div>';
+      }
+
+      // Summary
+      document.getElementById('res-summary').innerText = data.summary || "No summary provided.";
+    }
+
+    function resetCamera() {
+      document.getElementById('captured-preview').style.display = 'none';
+      document.getElementById('btn-retake').style.display = 'none';
+      base64Image = null;
+      startCamera();
+    }
+
+    function resetToStart() {
+      document.getElementById('result-container').style.display = 'none';
+      document.getElementById('main-card').style.display = 'block';
+      document.getElementById('captured-preview').style.display = 'none';
+      document.getElementById('btn-retake').style.display = 'none';
+      document.getElementById('btn-start').style.display = 'flex';
+      base64Image = null;
+    }
+  </script>
+</body>
+</html>

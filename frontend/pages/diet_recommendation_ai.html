@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NutriVision - Diet Recommendation AI</title>
+  <link rel="stylesheet" href="../css/style.css?v=2">
+  <style>
+    .service-hero {
+      text-align: center;
+      padding: 4rem 5% 2rem 5%;
+    }
+    .service-hero h1 { font-size: 3rem; font-weight: 800; color: var(--text-primary); margin-bottom: 1rem; }
+    .service-hero h1 span {
+      background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .service-hero p { font-size: 1.2rem; color: var(--text-secondary); max-width: 700px; margin: 0 auto 2rem auto; line-height: 1.6; }
+    
+    .service-container {
+      max-width: 900px;
+      margin: 0 auto 4rem auto;
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 3rem;
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+      text-align: center;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+
+    .form-group-full {
+      margin-bottom: 1.5rem;
+      text-align: left;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--surface-border);
+      border-radius: 8px;
+      background: var(--background);
+      color: var(--text-primary);
+      font-size: 1rem;
+      font-family: inherit;
+      transition: all 0.3s;
+      box-sizing: border-box;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.1);
+    }
+
+    .action-btn {
+      width: 100%;
+      padding: 1rem;
+      font-size: 1.1rem;
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+    
+    #result-container {
+      display: none;
+      max-width: 900px;
+      margin: 0 auto 4rem auto;
+    }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--surface-border);
+      border-radius: 16px;
+      padding: 2.5rem;
+      margin-bottom: 2rem;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+      text-align: left;
+    }
+
+    .result-card h3 {
+      color: var(--primary);
+      margin-bottom: 1rem;
+      font-size: 1.3rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .diet-plan-html h4 {
+      margin-top: 1.5rem;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--surface-border);
+      padding-bottom: 0.25rem;
+    }
+
+    .diet-plan-html ul {
+      margin-left: 1.5rem;
+      margin-bottom: 1.5rem;
+      color: var(--text-secondary);
+      line-height: 1.8;
+    }
+
+    .diet-plan-html strong {
+      color: var(--text-primary);
+    }
+  </style>
+</head>
+<body>
+
+  <div id="navbar-placeholder"></div>
+
+  <main>
+    <section class="service-hero">
+      <h1>Diet <span>Recommendation AI</span></h1>
+      <p>Enter your details and goals. Our Live AI will instantly generate a 7-day personalized diet chart tailored to your objectives.</p>
+    </section>
+
+    <div class="service-container" id="form-card">
+      <div class="form-grid">
+        <div>
+          <label>Age</label>
+          <input type="number" id="age-input" value="25" min="1">
+        </div>
+        <div>
+          <label>Gender</label>
+          <select id="gender-input">
+            <option value="Male" selected>Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div>
+          <label>Height (cm)</label>
+          <input type="number" id="height-input" value="175" min="50">
+        </div>
+        <div>
+          <label>Weight (kg)</label>
+          <input type="number" id="weight-input" value="70" min="20">
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <div>
+          <label>Diet Preference</label>
+          <select id="diet-pref-input">
+            <option value="Vegetarian">Vegetarian</option>
+            <option value="Non-Vegetarian" selected>Non-Vegetarian</option>
+            <option value="Vegan">Vegan</option>
+            <option value="Pescatarian">Pescatarian</option>
+          </select>
+        </div>
+        <div>
+          <label>Daily Lifestyle</label>
+          <select id="lifestyle-input">
+            <option value="Sedentary">Sedentary</option>
+            <option value="Lightly Active">Lightly Active</option>
+            <option value="Moderately Active" selected>Moderately Active</option>
+            <option value="Very Active">Very Active</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group-full">
+        <label>Primary Fitness/Health Goal</label>
+        <select id="goal-input">
+          <option value="Weight Loss / Fat Loss">Weight Loss / Fat Loss</option>
+          <option value="Muscle Gain & Bodybuilding">Muscle Gain & Bodybuilding</option>
+          <option value="Athletic Performance (Sports/Endurance)">Athletic Performance (Sports/Endurance)</option>
+          <option value="Lean Bulk">Lean Bulk</option>
+          <option value="Strength & Power Lifting">Strength & Power Lifting</option>
+          <option value="General Health & Maintenance" selected>General Health & Maintenance</option>
+        </select>
+      </div>
+
+      <button class="btn btn-primary action-btn" id="generate-btn" onclick="generateDiet()">
+        Generate 7-Day Diet Plan
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M5 12h14"></path>
+          <path d="M12 5l7 7-7 7"></path>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Results Container -->
+    <div id="result-container">
+      <div class="result-card">
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 2v20"></path>
+            <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+          </svg>
+          AI Expert Guidance
+        </h3>
+        <p id="ai-guidance" style="color: var(--text-secondary); line-height: 1.6; margin-bottom: 2rem;"></p>
+
+        <h3>
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+            <line x1="16" y1="2" x2="16" y2="6"></line>
+            <line x1="8" y1="2" x2="8" y2="6"></line>
+            <line x1="3" y1="10" x2="21" y2="10"></line>
+          </svg>
+          Your 7-Day Meal Plan
+        </h3>
+        <div id="ai-diet-plan" class="diet-plan-html"></div>
+      </div>
+      <button class="btn btn-outline" style="width: 100%;" onclick="resetForm()">Create Another Plan</button>
+    </div>
+  </main>
+
+  <script src="../js/main.js?v=2"></script>
+  <script>
+    const API_BASE = 'http://127.0.0.1:5000/api';
+
+    async function generateDiet() {
+      const btn = document.getElementById('generate-btn');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = 'Analyzing Profile & Generating...';
+      btn.disabled = true;
+
+      const payload = {
+        age: document.getElementById('age-input').value,
+        gender: document.getElementById('gender-input').value,
+        height: document.getElementById('height-input').value,
+        weight: document.getElementById('weight-input').value,
+        diet_preference: document.getElementById('diet-pref-input').value,
+        lifestyle: document.getElementById('lifestyle-input').value,
+        goal: document.getElementById('goal-input').value
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/diet/generate`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        
+        if (data.error) {
+          alert("Error: " + data.error);
+        } else {
+          document.getElementById('form-card').style.display = 'none';
+          document.getElementById('result-container').style.display = 'block';
+          
+          document.getElementById('ai-guidance').innerText = data.guidance;
+          document.getElementById('ai-diet-plan').innerHTML = data.diet_plan;
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Failed to connect to the server.");
+      }
+
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+
+    function resetForm() {
+      document.getElementById('result-container').style.display = 'none';
+      document.getElementById('form-card').style.display = 'block';
+    }
+  </script>
+</body>
+</html>
